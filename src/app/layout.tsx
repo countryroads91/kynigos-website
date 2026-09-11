@@ -8,6 +8,11 @@ import AnalyticsGate from "@/components/AnalyticsGate";
 import ConsentModeBridge from "@/components/ConsentModeBridge";
 import ScrollReveal from "@/components/ScrollReveal";
 import { PRACTICE_GROUPS } from "@/content/practices";
+import { isMaintenanceMode } from "@/lib/maintenance";
+
+// Evaluated once at build. When on, the shell below drops to a bare document
+// and every route resolves to src/app/construction (see src/proxy.ts).
+const MAINTENANCE = isMaintenanceMode();
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -31,7 +36,28 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+// While paused the site makes no claim about services, so the marketing
+// description, keywords and OG copy are withheld. `/` stays indexable on
+// purpose: a brand search for "Kynigos Law Firm" must still find the firm.
+const maintenanceMetadata: Metadata = {
+  metadataBase: new URL("https://kynigos.law"),
+  title: { absolute: "Kynigos Law Firm, PLLC" },
+  description:
+    "The Kynigos Law Firm website is under construction. For inquiries, please contact info@kynigos.law.",
+  applicationName: "Kynigos Law Firm",
+  authors: [{ name: "Kynigos Law Firm, PLLC" }],
+  openGraph: {
+    type: "website",
+    siteName: "Kynigos Law Firm",
+    locale: "en_US",
+    title: "Kynigos Law Firm, PLLC",
+    description: "The Kynigos Law Firm website is under construction.",
+    images: [{ url: "/og-image.png", width: 2400, height: 1260 }],
+  },
+  robots: { index: true, follow: true },
+};
+
+const siteMetadata: Metadata = {
   metadataBase: new URL("https://kynigos.law"),
   title: {
     default: "Kynigos Law Firm—Your attorney should have skin in the game.",
@@ -65,7 +91,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const metadata: Metadata = MAINTENANCE
+  ? maintenanceMetadata
+  : siteMetadata;
+
 // Organization structured data—only claims supported by page content.
+// Under maintenance the page advertises no practice areas and no fee model,
+// and routes inquiries to email alone, so knowsAbout, priceRange and telephone
+// are all dropped rather than left asserting more than the visible page does.
 const legalServiceJsonLd = {
   "@context": "https://schema.org",
   "@type": "LegalService",
@@ -73,7 +106,6 @@ const legalServiceJsonLd = {
   url: "https://kynigos.law",
   logo: "https://kynigos.law/logo.png",
   image: "https://kynigos.law/og-image.png",
-  telephone: "+1-304-549-1058",
   email: "info@kynigos.law",
   address: {
     "@type": "PostalAddress",
@@ -82,8 +114,13 @@ const legalServiceJsonLd = {
     addressCountry: "US",
   },
   areaServed: "District of Columbia",
-  priceRange: "Flat fee and contingency",
-  knowsAbout: PRACTICE_GROUPS.map((group) => group.name),
+  ...(MAINTENANCE
+    ? {}
+    : {
+        telephone: "+1-304-549-1058",
+        priceRange: "Flat fee and contingency",
+        knowsAbout: PRACTICE_GROUPS.map((group) => group.name),
+      }),
 };
 
 export default function RootLayout({
@@ -120,15 +157,24 @@ export default function RootLayout({
             __html: JSON.stringify(legalServiceJsonLd),
           }}
         />
-        <Nav />
-        <main>{children}</main>
-        <Footer />
-        <CookieConsent />
-        <ScrollReveal />
-        {/* Loads only after analytics consent—see AnalyticsGate. */}
-        <AnalyticsGate />
-        {/* GA4 via Consent Mode v2—also gated on analytics consent. */}
-        <ConsentModeBridge />
+        {MAINTENANCE ? (
+          // Paused: the holding page renders alone. No nav, no footer, no
+          // forms, no analytics and therefore no cookies—which is what keeps
+          // the page free of any privacy-notice obligation.
+          children
+        ) : (
+          <>
+            <Nav />
+            <main>{children}</main>
+            <Footer />
+            <CookieConsent />
+            <ScrollReveal />
+            {/* Loads only after analytics consent—see AnalyticsGate. */}
+            <AnalyticsGate />
+            {/* GA4 via Consent Mode v2—also gated on analytics consent. */}
+            <ConsentModeBridge />
+          </>
+        )}
       </body>
     </html>
   );
