@@ -4,6 +4,7 @@ import { and, count, eq, gte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { events, leads, subscribers } from "@/lib/db/schema";
 import { sendNotification } from "@/lib/leads";
+import { isMaintenanceMode } from "@/lib/maintenance";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,14 @@ const WINDOW_DAYS = 7;
 // first-party store, no UI to build or maintain. Guarded by CRON_SECRET—
 // Vercel sends it as a bearer token on cron invocations.
 export async function GET(req: Request) {
+  // Paused: the cron stays defined in vercel.json (nothing to remember to
+  // restore) and the proxy lets it through, but no mail goes out while the
+  // site tells visitors it is under construction. 200 so Vercel logs no
+  // weekly failure.
+  if (isMaintenanceMode()) {
+    return NextResponse.json({ ok: true, skipped: "maintenance" });
+  }
+
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { posts } from "@/content/posts";
+import { isMaintenanceMode } from "@/lib/maintenance";
 
 export const BASE_URL = "https://kynigos.law";
 
@@ -28,6 +29,12 @@ export const STATIC_ROUTES = [
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  // Paused: every route but `/` answers 307, so listing them would advertise
+  // a hundred URLs that go nowhere. Ship the one page that actually resolves.
+  if (isMaintenanceMode()) {
+    return [{ url: `${BASE_URL}/`, lastModified: BUILD_DATE }];
+  }
+
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: BUILD_DATE,

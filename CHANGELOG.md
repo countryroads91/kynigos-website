@@ -3,6 +3,14 @@
 All notable changes to the Kynigos Law Firm site are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO format.
 
+## [0.8.1.0] - 2026-09-11
+
+### Added
+- The site can now be paused behind a single under-construction holding page: the spearhead mark drawing itself in, the firm name, and one line pointing inquiries to info@kynigos.law. Set `MAINTENANCE_MODE=1` in Vercel and redeploy to pause; unset it and redeploy to bring the site back exactly as it was. Nothing is deleted or rewritten either way.
+- While paused, the holding page answers at the firm's own address and stays indexable, so a search for the firm by name still finds it. Every other address temporarily redirects there, which tells search engines the move is not permanent and leaves the real pages' standing intact.
+- The paused page is deliberately inert: no navigation, no forms, no analytics and no cookies, so nothing is collected from anyone who lands on it while the firm is dark. The Monday digest email also stops sending on its own, without the schedule needing to be torn down and rebuilt later.
+- The holding page carries the notice that matters for a page inviting contact: contacting the firm creates no attorney-client relationship, and confidential information should not be sent until representation is confirmed in writing. It also states the District of Columbia admission and names no individual attorney.
+
 ## [0.8.0.0] - 2026-07-07
 
 ### Added
